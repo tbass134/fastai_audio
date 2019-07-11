@@ -11,6 +11,10 @@ sudo chmod +x install.sh
 ./install.sh
 ```
 
+If you wish to work in a folder other than fastai_audio, you can link the audio folder by navigating in the terminal to the folder where your notebooks are and running
+`ln -s /path-to-fastai-audio/audio .`
+
+
 # Features
 
 ### Audio Transform Pre-Processors
