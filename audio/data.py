@@ -330,11 +330,11 @@ class AudioList(ItemList):
         '''Displays samples, plots file lengths and returns outliers of the AudioList'''
         len_dict = {}
         rate_dict = {}
-        pb = progress_bar(self)
+        pb = progress_bar(self.items)
         for item in pb:
-            si, ei = torchaudio.info(str(item.path))
-            len_dict[item.path] = si.length/si.rate
-            rate_dict[item.path] = si.rate
+            si, ei = torchaudio.info(str(item))
+            len_dict[item] = si.length/si.rate
+            rate_dict[item] = si.rate
         lens = list(len_dict.values())
         rates = list(rate_dict.values())
         print("Sample Rates: ")
