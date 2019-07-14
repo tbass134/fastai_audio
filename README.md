@@ -7,6 +7,7 @@ To install, run the following commands in a shell.
 
 ```
 git clone https://github.com/mogwai/fastai_audio
+cd fastai_audio
 sudo chmod +x install.sh
 ./install.sh
 ```
