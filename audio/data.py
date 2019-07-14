@@ -266,9 +266,8 @@ class AudioList(ItemList):
 
     def open(self, item) -> AudioItem:
         p = Path(item)
-        if self.path is not None and str(self.path) not in str(item): p = self.path/item
-        if not p.exists(): 
-            raise FileNotFoundError(f"Neither '{item}' nor '{p}' could be found")
+        if self.path is not None and not p.exists() and str(self.path) not in str(item): p = self.path/item
+        if not p.exists(): raise FileNotFoundError(f"Neither '{item}' nor '{p}' could be found")
         if not str(p).lower().endswith(AUDIO_EXTENSIONS): raise Exception("Invalid audio file")
 
         cfg = self.config
