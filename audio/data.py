@@ -207,7 +207,7 @@ def _set_sr(item_path, config, path):
     config._sr = sr
 
 class AudioLabelList(LabelList):
-
+    
     def _pre_process(self):
         x, y = self.x, self.y
         cfg = x.config
@@ -221,16 +221,19 @@ class AudioLabelList(LabelList):
                     (x, y)) if len(y) > 0 else x
                 
                 if x.config.resample_to:
+                    print("Resampling to ", x.config.resample_to)
                     cfg._sr = x.config.resample_to 
-                    items = [resample_item(i, x.config, x.path) for i in items]
+                    items = [resample_item(i, x.config, x.path) for i in progress_bar(items)]
                     items = reduce(concat, items, np.empty((0, 2)))
 
                 if x.config.remove_silence:
-                    items = [remove_silence(i, x.config, x.path) for i in items]
+                    print("Removing Silence")
+                    items = [remove_silence(i, x.config, x.path) for i in progress_bar(items)]
                     items = reduce(concat, items, np.empty((0, 2)))
 
                 if x.config.segment_size:
-                    items = [segment_items(i, x.config, x.path) for i in items]
+                    print("Segmenting")
+                    items = [segment_items(i, x.config, x.path) for i in progress_bar(items)]
                     items = reduce(concat, items, np.empty((0, 2)))
 
                 nx, ny = tuple(zip(*items))
@@ -244,6 +247,10 @@ class AudioLabelList(LabelList):
         super().process(*args, **kwargs)
         self.x.config._processed = True
 
+        
+    #def stats(self, *args, **kwargs):
+        #return self.x.stats()
+    
 class AudioList(ItemList):
     _bunch = AudioDataBunch
     config: AudioConfig
