@@ -84,7 +84,7 @@ def tfm_padtrim_signal(sig, width, pad_mode="zeros"):
     else:
         raise ValueError(f"pad_mode {pad_mode} not currently supported, only 'zeros', or 'repeat'")
         
-def tfm_interpolate(spectro, size, interp_mode="bilinear"):
+def tfm_interpolate(spectro, size, interp_mode="bilinear", **kwargs):
     '''Temporary fix to allow image resizing transform'''
     if isinstance(size, int): size = (size, size)
     sg = spectro.clone()
