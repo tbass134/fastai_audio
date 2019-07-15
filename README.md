@@ -50,7 +50,8 @@ These operations are cached and depend on each other in the order below. If you 
 
 # Known Issues
 - We don't currently understand normalization for audio and the best way to implement it. 
-- Inference and Exporting models appear to work but haven't been extensively tested
+- Inference and Exporting models work in some cases but are broken in others, check your outputs before using.
+- Stats method can be extremely slow.
 - Cache folder can get extremely large. Remember to clear it using `config.clear_cache()` 
 
 # Contributors
