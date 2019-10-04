@@ -39,23 +39,23 @@ class SpectrogramConfig:
     ws: int = None
     n_mfcc: int = 20
     def mel_args(self):
-        return {k:v for k, v in asdict(self).items() if k in ["f_min", "f_max", "hop", "n_fft", 
+        return {k:v for k, v in asdict(self).items() if k in ["f_min", "f_max", "hop", "n_fft",
                                                       "n_mels", "pad", "ws"]}
-        
+
 @dataclass
 class AudioConfig:
     '''Options for pre-processing audio signals'''
     cache: bool = True
     cache_dir = Path.home()/'.fastai/cache'
     # force_cache = False >>> DEPRECATED Use clear cache instead
-    
+
     duration: int = None
     max_to_pad: float = None
     pad_mode: str = "zeros"
     remove_silence: str = None
     use_spectro: bool = True
     mfcc: bool = False
-    
+
     delta: bool = False
     silence_padding: int = 200
     silence_threshold: int = 20
@@ -67,9 +67,9 @@ class AudioConfig:
     _processed = False
     _sr = None
     _nchannels = None
-    
+
     sg_cfg: SpectrogramConfig = SpectrogramConfig()
-        
+
     def __setattr__(self, name, value):
         '''Override to warn user if they are mixing seconds and ms'''
         if name in 'duration max_to_pad segment_size'.split():
@@ -83,7 +83,7 @@ class AudioConfig:
         parent_dirs = set()
         if not os.path.exists(self.cache_dir/"cache_contents.txt"):
             print("Cache contents not found, try calling again after creating your AudioList")
-            
+
         with open(self.cache_dir/"cache_contents.txt", 'r') as f:
             pb = progress_bar(f.read().split('\n')[:-1])
             for line in pb:
@@ -98,14 +98,14 @@ class AudioConfig:
                         parent_dirs.add(parent)
                         num_removed += 1
         for parent in parent_dirs:
-            if(os.path.exists(parent) and len(parent.ls()) == 0): 
-                try: 
+            if(os.path.exists(parent) and len(parent.ls()) == 0):
+                try:
                     os.rmdir(str(parent))
                 except Exception as e:
-                    print(f"Warning: Unable to remove empty dir {parent}, due to error {str(e)}...continuing")       
+                    print(f"Warning: Unable to remove empty dir {parent}, due to error {str(e)}...continuing")
         os.remove(self.cache_dir/"cache_contents.txt")
         print(f"{num_removed} files removed")
-     
+
     def cache_size(self):
         '''Check cache size, returns a tuple of int in bytes, and string representing MB'''
         cache_size = 0
@@ -116,7 +116,7 @@ class AudioConfig:
             for file in files:
                 cache_size += os.path.getsize(os.path.join(path, file))
         return (cache_size, f"{cache_size//(2**20)} MB")
-    
+
 def get_cache(config, cache_type, item_path, params):
     if not config.cache_dir: return None
     details = "-".join(map(str, params))
@@ -199,7 +199,7 @@ def _record_cache_contents(cfg, files):
     '''Writes cache filenames to log for safe removal using 'clear_cache()' '''
     try:
         with open(cfg.cache_dir/"cache_contents.txt", 'a+') as f:
-            for file in files: 
+            for file in files:
                 f.write(str(file)+'\n')
     except Exception as e:
         print(f"Unable to save files to cache log, cache at {cfg.cache_dir} may need to be cleared manually")
@@ -231,7 +231,7 @@ class AudioLabelList(LabelList):
     def _pre_process(self):
         x, y = self.x, self.y
         cfg = x.config
-        
+
         if len(x.items) > 0:
             if not cfg.resample_to: _set_sr(x.items[0], x.config, x.path)
             if cfg._nchannels is None: _set_nchannels(x.items[0], x.config, x.path)
@@ -240,7 +240,7 @@ class AudioLabelList(LabelList):
 
                 def concat(x, y): return np.concatenate(
                     (x, y)) if len(y) > 0 else x
-                
+
                 if x.config.downmix:
                     print("Preprocessing: Downmixing to Mono")
                     cfg._nchannels=1
@@ -249,7 +249,7 @@ class AudioLabelList(LabelList):
 
                 if x.config.resample_to:
                     print("Preprocessing: Resampling to", x.config.resample_to)
-                    cfg._sr = x.config.resample_to 
+                    cfg._sr = x.config.resample_to
                     items = [resample_item(i, x.config, x.path) for i in progress_bar(items)]
                     items = reduce(concat, items, np.empty((0, 2)))
 
@@ -265,10 +265,10 @@ class AudioLabelList(LabelList):
 
                 nx, ny = tuple(zip(*items))
                 x.items, y.items = np.array(nx), np.array(ny)
- 
+
         self.x, self.y = x, y
         self.y.x = x
-   
+
     def process(self, *args, **kwargs):
         self._pre_process()
         super().process(*args, **kwargs)
@@ -285,16 +285,16 @@ class AudioList(ItemList):
         super().__init__(items, path, **kwargs)
         cd = config.cache_dir
         self._label_list = AudioLabelList
-        if str(path) not in str(cd): 
+        if str(path) not in str(cd):
             config.cache_dir = path / cd
         self.config = config
         self.copy_new += ['config']
 
-    def open(self, fn): # file name, it seems
+    def open(self, fn, **kwargs): # file name, it seems
         fn=Path(fn)
         if self.path is not None and not fn.exists() and str(self.path) not in str(fn): fn = self.path/item
         if self.config.use_spectro:
-            item=self.add_spectro(fn)
+            item=self.add_spectro(fn, **kwargs)
         else:
             func_to_add = self._get_pad_func() if self.config.max_to_pad or self.config.segment_size else None
             item=open_audio(fn, func_to_add)
@@ -303,52 +303,52 @@ class AudioList(ItemList):
 
     def _validate_consistencies(self, item):
         if(self.config._sr is not None and item.sr != self.config._sr):
-            raise ValueError(f'''Multiple sample rates detected. Sample rate {item.sr} of file {item.path} 
-                                does not match config sample rate {self.config._sr} 
-                                this means your dataset has multiple different sample rates, 
+            raise ValueError(f'''Multiple sample rates detected. Sample rate {item.sr} of file {item.path}
+                                does not match config sample rate {self.config._sr}
+                                this means your dataset has multiple different sample rates,
                                 please choose one and set resample_to to that value''')
         if(self.config._nchannels is not None and self.config._nchannels != item.nchannels):
-            raise ValueError(f'''Multiple channel sizes detected. Channel size {item.nchannels} of file 
+            raise ValueError(f'''Multiple channel sizes detected. Channel size {item.nchannels} of file
                                 {item.path} does not match others' channel size of {self.config._nchannels}. A dataset may
-                                not contain different number of channels. Please set downmix=true in AudioConfig or 
+                                not contain different number of channels. Please set downmix=true in AudioConfig or
                                 separate files with different number of channels.''')
 
-    def add_spectro(self, fn:PathOrStr):
+    def add_spectro(self, fn:PathOrStr, **kwargs):
         spectro,start,end=None,None,None
         cache_path = self._get_cache_path(fn)
         if self.config.cache and cache_path.exists():
             spectro = torch.load(cache_path)
         else:
             #Dropping sig and sr off here, should I propogate this to new audio item if I have it?
-            func_to_add = self._get_pad_func() if self.config.max_to_pad or self.config.segment_size else None 
+            func_to_add = self._get_pad_func() if self.config.max_to_pad or self.config.segment_size else None
             item=open_audio(fn, func_to_add)
             self._validate_consistencies(item)
             spectro = self.create_spectro(item)
             if self.config.cache:
                 self._save_in_cache(fn, spectro)
-        if self.config.duration and self.config._processed: 
+        if self.config.duration and self.config._processed:
                 spectro, start, end = tfm_crop_time(spectro, self.config._sr, self.config.duration, self.config.sg_cfg.hop, self.config.pad_mode)
         return AudioItem(path=fn,spectro=spectro,start=start,end=end)
 
     def _get_pad_func(self):
-        def pad_func(sig, sr): 
+        def pad_func(sig, sr):
             pad_len = self.config.max_to_pad if self.config.max_to_pad is not None else self.config.segment_size
             num_samples = int((sr*pad_len)/1000)
             return tfm_padtrim_signal(sig, num_samples, pad_mode="zeros")
         return pad_func
-    
+
     def create_spectro(self, item:AudioItem):
-        if self.config.mfcc: 
+        if self.config.mfcc:
             mel = MFCC(sr=item.sr, n_mfcc=self.config.sg_cfg.n_mfcc, melkwargs=self.config.sg_cfg.mel_args())(item.sig)
         else:
             mel = MelSpectrogram(**(self.config.sg_cfg.mel_args()))(item.sig)
-            if self.config.sg_cfg.to_db_scale: 
+            if self.config.sg_cfg.to_db_scale:
                 mel = SpectrogramToDB(top_db=self.config.sg_cfg.top_db)(mel)
         mel = mel.permute(0, 2, 1)
-        if self.config.standardize: 
+        if self.config.standardize:
             mel = standardize(mel)
-        if self.config.delta: 
-            mel = torch.cat([torch.stack([m,torchdelta(m),torchdelta(m, order=2)]) for m in mel]) 
+        if self.config.delta:
+            mel = torch.cat([torch.stack([m,torchdelta(m),torchdelta(m, order=2)]) for m in mel])
         return mel
 
     def _get_cache_path(self, fn:Path):
@@ -365,9 +365,9 @@ class AudioList(ItemList):
     def get(self, i):
         fn = super().get(i)
         return self.open(fn)
-    
+
     def reconstruct(self, x): return x
-    
+
     def stats(self, prec=0, devs=3, figsize=(15,5)):
         '''Displays samples, plots file lengths and returns outliers of the AudioList'''
         len_dict = {}
@@ -382,8 +382,8 @@ class AudioList(ItemList):
         print("Sample Rates: ")
         for sr,count in Counter(rates).items(): print(f"{int(sr)}: {count} files")
         self._plot_lengths(lens, prec, figsize)
-        return len_dict 
-    
+        return len_dict
+
     def _plot_lengths(self, lens, prec, figsize):
         '''Plots a list of file lengths displaying prec digits of precision'''
         rounded = [round(i, prec) for i in lens]
@@ -396,7 +396,7 @@ class AudioList(ItemList):
         xticks = np.linspace(int(min(rounded)), int(max(rounded))+1, 10)
         plt.xticks(xticks)
         plt.show()
-  
+
     @classmethod
     def from_folder(cls, path: PathOrStr = '.', extensions: Collection[str] = None, recurse: bool = True, **kwargs) -> ItemList:
         if not extensions:
